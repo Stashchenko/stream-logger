@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: simplelog
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: simplelog
+      labels:
+        name: simplelog
+    spec:
+      containers:
+        - image: gcr.io/<project_name>/simplelog:final
+          name: simplelog
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+              name: simplelog
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 4000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: simplelog
+  name: simplelog
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 4000
+    name: simpleport
+  selector:
+    name: simplelog
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: "simplelog-ingress"
+spec:
+  backend:
+    serviceName: simplelog
+    servicePort: 8080
